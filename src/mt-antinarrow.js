@@ -108,6 +108,20 @@
       // 连 --sheldWidth 一起覆盖：#sheld 自身、依赖该变量的抽屉/齿轮锚点全部一致拉满
       r.push(':root{--sheldWidth:100vw!important;--sheldWidth:100dvw!important}');
       r.push('#sheld{width:100vw!important;max-width:100vw!important;width:100dvw!important;max-width:100dvw!important}');
+      // 左右导航抽屉（AI响应配置/角色管理）与提示词/CFG浮层的原生宽度是
+      // “聊天列两侧空隙的一半”：calc((100dvw - var(--sheldWidth))/2)，
+      // 拉满后算式为负、塌缩成 min-width:100px 窄条 → 照酒馆移动端的做法改为全屏展开。
+      // top 必须下移让出顶栏图标行：酒馆关闭抽屉只有“再点一次开关图标”和“点击抽屉
+      // 以外区域”两条路，全屏面板(fixed top:0)会把自己的开关图标压在下面、屏幕上也不
+      // 再有抽屉以外的可点区域，两条路全断就永远关不掉了（移动端同样让出顶栏）
+      r.push('#left-nav-panel{top:var(--topBarBlockSize,40px)!important;left:0!important;right:auto!important'
+        + ';width:100vw!important;max-width:100vw!important'
+        + ';width:100dvw!important;max-width:100dvw!important}');
+      r.push('#right-nav-panel{top:var(--topBarBlockSize,40px)!important;left:auto!important;right:0!important'
+        + ';width:100vw!important;max-width:100vw!important'
+        + ';width:100dvw!important;max-width:100dvw!important}');
+      // 浮层保留原生 max-width:90dvw 的收边，只补宽度
+      r.push('#floatingPrompt,#cfgConfig{width:100vw!important;width:100dvw!important}');
     }
     const body = r.join('\n');
     return s.narrowOnly
