@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  /* 按 SillyTavern public/style.css 默认值复刻消息模板（index.html #message_template） */
+  :root { --sheldWidth: 85vw; --mes-right-spacing: 30px; --avatar-base-height: 50px; --avatar-base-width: 50px;
+          --swipeCounterHeight: 15px; --swipeCounterMargin: 5px; }
+  body { margin: 0; background: #202126; font-family: sans-serif; color: #ddd; }
+  #sheld { position: relative; height: 620px; width: var(--sheldWidth); margin: 0 auto; display: flex; flex-direction: column; }
+  #chat { flex: 1; overflow-y: auto; display: flex; flex-direction: column; background: rgba(18,20,28,.92); }
+  .mes { display: flex; align-items: flex-start; padding: 10px 10px 0 10px; width: 100%; position: relative; }
+  .for_checkbox, .del_checkbox { display: none; }
+  .mesAvatarWrapper { width: var(--avatar-base-width); flex: none; height: var(--avatar-base-height);
+                      background: #2a2d35; border-radius: 6px; position: relative; }
+  .last_mes .mesAvatarWrapper { padding-bottom: var(--avatar-base-height); }
+  .mes_block { padding-left: 10px; width: 100%; }
+  .ch_name { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .name_text { font-weight: 700; }
+  .mes_buttons { position: relative; display: flex; gap: 4px; opacity: .9; }
+  .mes_text { padding-left: 0; padding-top: 5px; padding-bottom: 5px; padding-right: var(--mes-right-spacing); }
+  .mes_reasoning_details { margin-right: var(--mes-right-spacing); border: 1px solid #3a3d46; border-radius: 6px; padding: 4px 8px; font-size: 12px; opacity: .85; }
+  .mes_reasoning_details .mes_reasoning_summary { margin-right: calc(var(--mes-right-spacing) * -1); display: block; }
+  .mes_media_wrapper { padding-right: var(--mes-right-spacing); margin: 6px 0; }
+  .mes_media_wrapper img { width: 100%; height: 40px; object-fit: cover; display: block; border-radius: 6px; background: #262a33; }
+  .mes_text iframe { width: 100%; border: 0; display: block; background: #111318; height: 300px; }
+  .swipe_left, .swipe_right { position: absolute; bottom: calc(var(--swipeCounterHeight) + var(--swipeCounterMargin));
+      width: 25px; height: 25px; opacity: .3; z-index: 9999; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .swipe_left { left: 20px; }
+  .swipeRightBlock { position: absolute; right: 0; bottom: 0; pointer-events: none; display: flex; align-items: center; gap: 4px; }
+  .swipes-counter { opacity: .3; font-size: 12px; }
+  pre#out { margin: 6px 10px; font-size: 10px; white-space: pre-wrap; }
+  #test-pagehide { margin: 4px 10px 10px; padding: 4px 10px; }
+</style>
+</head>
+<body>
+<div id="sheld">
+  <div id="chat">
+    <div class="mes last_mes" mesid="1" is_user="false">
+      <div class="for_checkbox"></div>
+      <div class="del_checkbox"></div>
+      <div class="mesAvatarWrapper"></div>
+      <div class="swipe_left">‹</div>
+      <div class="mes_block">
+        <div class="ch_name flex-container justifySpaceBetween">
+          <span class="name_text">苏小桃</span>
+          <div class="flex-container flex1 alignitemscenter" style="flex:1"></div>
+          <div class="mes_buttons"><span>✎</span><span>…</span></div>
+        </div>
+        <div class="mes_text">
+          <div class="mes_reasoning_details"><span class="mes_reasoning_summary">思考中…</span></div>
+          <iframe src="_stub_page.html"></iframe>
+          <div class="mes_media_wrapper"><img alt="media"></div>
+        </div>
+      </div>
+      <div class="swipeRightBlock"><span class="swipes-counter">1&NoBreak;/&NoBreak;1</span><span class="swipe_right">›</span></div>
+    </div>
+    <div class="mes" mesid="2" is_user="true">
+      <div class="for_checkbox"></div>
+      <div class="del_checkbox"></div>
+      <div class="mesAvatarWrapper"></div>
+      <div class="swipe_left">‹</div>
+      <div class="mes_block">
+        <div class="ch_name flex-container justifySpaceBetween">
+          <span class="name_text">用户</span>
+          <div class="flex-container flex1 alignitemscenter" style="flex:1"></div>
+          <div class="mes_buttons"><span>✎</span><span>…</span></div>
+        </div>
+        <div class="mes_text">普通文本楼层，带媒体行：<div class="mes_media_wrapper"><img alt="m"></div></div>
+      </div>
+      <div class="swipeRightBlock"><span class="swipes-counter">1&NoBreak;/&NoBreak;1</span><span class="swipe_right">›</span></div>
+    </div>
+  </div>
+</div>
+<pre id="out">booting…</pre>
+<button id="test-pagehide" type="button">模拟脚本停用(pagehide)</button>
+<script src="../src/mt-antinarrow.js"></script>
+<script>
+  // ---------- 测试探针：每 400ms 渲染一次关键计算样式 ----------
+  function metrics() {
+    const mesA = document.querySelector('#chat .mes.last_mes');
+    const rowAvatar = mesA.querySelector(':scope > .mesAvatarWrapper');
+    const barAvatar = mesA.querySelector('.ch_name > .mesAvatarWrapper');
+    const anyAvatar = mesA.querySelector('.mesAvatarWrapper');
+    const block = mesA.querySelector('.mes_block');
+    const ifr = mesA.querySelector('iframe');
+    const rd = mesA.querySelector('.mes_reasoning_details');
+    const sm = mesA.querySelector('.mes_reasoning_summary');
+    const mw = document.querySelector('.mes_media_wrapper');
+    const cs = (el) => el ? getComputedStyle(el) : null;
+    const aCs = cs(anyAvatar);
+    return {
+      avatarInRow: !!rowAvatar,
+      avatarInNameBar: !!barAvatar,
+      avatarDisplay: aCs ? aCs.display : null,
+      blockW: Math.round(block.getBoundingClientRect().width),
+      iframeW: ifr ? Math.round(ifr.getBoundingClientRect().width) : null,
+      reasoningMarginR: cs(rd) ? cs(rd).marginRight : null,
+      summaryMarginR: cs(sm) ? cs(sm).marginRight : null,
+      mediaPadR: cs(mw) ? cs(mw).paddingRight : null,
+      lastMesPadBottom: getComputedStyle(mesA).paddingBottom,
+      mesMarginL: getComputedStyle(mesA).marginLeft,
+      mesW: Math.round(mesA.getBoundingClientRect().width),
+      gearRight: (g => g ? getComputedStyle(g).right : null)(document.getElementById('mt-antinarrow-gear')),
+      gearBottom: (g => g ? getComputedStyle(g).bottom : null)(document.getElementById('mt-antinarrow-gear')),
+      gearHit: (() => {
+        const g = document.getElementById('mt-antinarrow-gear');
+        if (!g) return null;
+        const r = g.getBoundingClientRect();
+        const el = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+        return el ? (el.id || el.className.baseVal !== undefined ? (el.id || el.tagName) : el.tagName) : 'none';
+      })(),
+      sheldW: Math.round(document.getElementById('sheld').getBoundingClientRect().width),
+      gear: !!document.getElementById('mt-antinarrow-gear'),
+      panelHidden: (p => p ? p.hidden : 'missing')(document.getElementById('mt-antinarrow-panel')),
+      bpValue: (document.querySelector('.mtan-num') || {}).value,
+      bpDisabled: (document.querySelector('.mtan-num') || {}).disabled,
+      mediaHead: ((document.getElementById('mt-antinarrow-style') || { textContent: '' }).textContent.match(/@media[^{]*/) || ['no-media'])[0],
+      numEvents: window.__numEvents || [],
+      saved: localStorage.getItem('mtAntiNarrow.settings.v1')
+    };
+  }
+  function render() {
+    try { document.getElementById('out').textContent = JSON.stringify(metrics(), null, 1); } catch (e) {}
+  }
+  setInterval(render, 400);
+  window.__numEvents = [];
+  document.addEventListener('change', (e) => {
+    if (e.target && e.target.classList && e.target.classList.contains('mtan-num')) {
+      window.__numEvents.push('change:' + e.target.value);
+    }
+  }, true);
+  document.getElementById('test-pagehide').addEventListener('click', () => {
+    window.dispatchEvent(new Event('pagehide'));
+    setTimeout(render, 100);
+  });
+</script>
+</body>
+</html>
