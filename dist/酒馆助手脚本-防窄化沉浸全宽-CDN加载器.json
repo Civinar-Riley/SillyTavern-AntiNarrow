@@ -1,0 +1,22 @@
+{
+    "type": "script",
+    "enabled": true,
+    "name": "防窄化·沉浸全宽（CDN 加载器）",
+    "id": "2b6af65a-5c15-4d5e-be42-d294187e424b",
+    "content": "import 'https://cdn.jsdelivr.net/gh/Civinar-Riley/SillyTavern-AntiNarrow@main/src/mt-antinarrow.js';",
+    "info": "防窄化·沉浸全宽 CDN 加载器：脚本内容只有一行 import，代码实时从 jsDelivr 拉取本仓库 @main 分支，仓库更新后无需重新导入（jsDelivr 有最长约 12 小时缓存）。与自包含版二选一导入，不要同时启用两个，否则会出现两个同名脚本按钮。断网或 CDN 不可达时无效，此时请用自包含版。",
+    "button": {
+        "enabled": true,
+        "buttons": [
+            {
+                "name": "防窄化设置",
+                "visible": true
+            }
+        ]
+    },
+    "data": {},
+    "export_with": {
+        "data": false,
+        "button": false
+    }
+}
