@@ -6,7 +6,7 @@
 
 [![Platform](https://img.shields.io/badge/platform-SillyTavern-6a4c93?style=flat-square)](https://github.com/SillyTavern/SillyTavern)
 [![Runtime](https://img.shields.io/badge/runtime-%E9%85%92%E9%A6%86%E5%8A%A9%E6%89%8B%E8%84%9A%E6%9C%AC-4a90d9?style=flat-square)](https://github.com/N0VI028/JS-Slash-Runner)
-[![Version](https://img.shields.io/badge/version-v1.2.0-2f81f7?style=flat-square)](https://github.com/Civinar-Riley/SillyTavern-AntiNarrow/tree/v1.2.0)
+[![Version](https://img.shields.io/badge/version-v1.2.1-2f81f7?style=flat-square)](https://github.com/Civinar-Riley/SillyTavern-AntiNarrow/tree/v1.2.1)
 [![License](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-lightgrey?style=flat-square)](#-声明与授权)
 ![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen?style=flat-square)
 [![Last commit](https://img.shields.io/github/last-commit/Civinar-Riley/SillyTavern-AntiNarrow?style=flat-square)](https://github.com/Civinar-Riley/SillyTavern-AntiNarrow/commits/main)
@@ -39,10 +39,10 @@
 | 🖼️ 头像列搬进名字栏 | 默认档。头像在 `.ch_name` 行内显示，消息行让出整列 50px；已被其他脚本搬走的头像自动跳过，不重复搬家 |
 | ↕️ 重roll 空带补偿 | 头像离开消息行后，末楼底部按 `calc(var(--avatar-base-height,50px) + 4px)` 补回 `‹ ›` 空带；检测到宿主已开启沉浸类布局（`body.immersive-mode`）时自动让位，避免双重预留 |
 | 📏 楼层左右留白 | 用 `margin` 而非 padding 内缩 `.mes`（`width: calc(100% - 2×留白)`），不参与 content-box 计算，四档：贴边 / 小 8px / 中 14px / 大 20px |
-| 🖥️ 聊天列拉满全屏 | 连 `--sheldWidth` 一起覆盖为 100vw；左右导航抽屉、`#floatingPrompt` 与 `#cfgConfig` 浮层同步全屏展开，抽屉顶栏图标行保持可点、可正常关闭 |
+| 🖥️ 聊天列拉满全屏 | 连 `--sheldWidth` 一起覆盖为 100vw；左右导航抽屉、提示词/CFG/logprobs 浮层与头像放大视图同步收口——浮层全屏展开，放大视图在宽视口改回自然宽度并居中（窄视口仍走酒馆移动端的全屏展开），抽屉顶栏图标行保持可点、可正常关闭 |
 | 📱 仅窄屏生效 | 断点默认 1000px（对齐酒馆移动端）；跨断点时自动搬移/还原头像，桌面端连头像位置一起保持原版 |
 | 🧹 停用即还原 | 官方 `pagehide` 停用钩子按 `data-mt-antinarrow-moved` 标记还原头像，并移除注入的样式与面板；热重载/双开时旧实例不会拆掉新实例的节点 |
-| 🐕 样式看门狗 | 晚加载的主题或脚本把 `<style>` 插到本脚本之后时，自动把规则挪回 `head` 末尾——所有规则本就 `!important`，同优先级比顺序，本脚本因此保持胜出 |
+| 🐕 样式看门狗 | 晚加载的主题或脚本把 `<style>` 插到本脚本之后、把注入样式整个删掉或挪出 `head` 时，自动把规则挪回 `head` 末尾或整体重建——所有规则本就 `!important`，同优先级比顺序，本脚本因此保持胜出 |
 
 ### 入口二 · 设置面板「防窄化设置」
 
@@ -74,7 +74,7 @@
 
 | 文件 | 内容 | 优点 | 代价 |
 | :--- | :--- | :--- | :--- |
-| [`酒馆助手脚本-防窄化沉浸全宽.json`](./dist/酒馆助手脚本-防窄化沉浸全宽.json) | 代码完整内置（26,405 字符） | 离线可用，版本固定，不受 CDN 影响 | 仓库更新后需重新导入 |
+| [`酒馆助手脚本-防窄化沉浸全宽.json`](./dist/酒馆助手脚本-防窄化沉浸全宽.json) | 代码完整内置（27,149 字符） | 离线可用，版本固定，不受 CDN 影响 | 仓库更新后需重新导入 |
 | [`酒馆助手脚本-防窄化沉浸全宽-CDN加载器.json`](./dist/酒馆助手脚本-防窄化沉浸全宽-CDN加载器.json) | 只有一行 `import` | 自动跟随最新的 v1.x 发布版，更新无需重新导入 | 断网或 jsDelivr 不可达时无效 |
 
 CDN 加载器版的全部代码就这一行：
@@ -118,7 +118,7 @@ import 'https://cdn.jsdelivr.net/gh/Civinar-Riley/SillyTavern-AntiNarrow@1/src/m
 | 头像「搬到名字栏」后位置与原版不同 | 头像 DOM 被移出消息行、放进 `.ch_name` | ✅ 面板「头像列」→「保留」完全还原 |
 | 头像「收起」时头像不可见也不可点 | 该档对直接子列 `display:none` | ✅ 换成「搬到名字栏」或「保留」 |
 | 全平台清零内边距会改变桌面端楼层观感 | 这是本脚本的功能本身，不是 bug | ✅ 面板「生效范围」→「仅窄屏」，或随时切档还原 |
-| 「拉满全屏」下 movingUI 拖拽面板按酒馆原生公式收缩 | 酒馆 `.draggable` 宽度为 `calc((100vw - var(--sheldWidth))/2)`，`--sheldWidth` 拉满 100vw 后算式为负，收在 `min-width:100px` 保底宽 | ⚠️ 左右导航抽屉与 `#floatingPrompt` / `#cfgConfig` 已由本脚本补回全屏；`#logprobsViewer` 等其余拖拽面板未覆盖 |
+| 「拉满全屏」下 movingUI 预设/手调的面板宽度被本脚本覆盖 | 导航抽屉、提示词/CFG/logprobs 浮层与头像放大视图的宽度由本脚本 `!important` 固定 | ⚠️ 拖动位置不受影响；想用 movingUI 自由改这些面板宽度时，面板「聊天列宽」切回「不动」 |
 | CDN 加载器版断网或 jsDelivr 不可达时无效 | 代码需要实时从 CDN 取 | ✅ 改用自包含版 |
 | 两个 JSON 同时启用会出现两个同名按钮 | 酒馆助手按脚本各注册一次按钮 | ✅ 只启用其中一个 |
 | 主题若用更高优先级或内联样式改写 `.mes` 宽度 | CSS 优先级竞争 | ⚠️ 本脚本规则全部 `!important` 且有看门狗保序，通常胜出；仍异常时用面板「注入」暂停做隔离验证 |
@@ -142,6 +142,8 @@ SillyTavern-AntiNarrow/
 │   ├── README.md                                      # 本地模拟验证说明
 │   ├── _script_host.html                              # 按酒馆消息模板复刻的验证页（直引 ../src 源码）
 │   └── _stub_page.html                                # iframe 占位页，模拟楼层里的整页 HTML
+├── scripts/
+│   └── sync-dist.py                                   # 维护用：把 src 写回自包含 JSON 并校验 CDN 加载器
 ├── LICENSE                                            # CC BY-NC-SA 4.0
 ├── README.md
 └── .gitignore
@@ -168,7 +170,7 @@ A：存在宿主页面的 localStorage，key 为 `mtAntiNarrow.settings.v1`，�
 A：能。酒馆的头像放大用的是事件委托 `$(document).on('click', '.mes .avatar')`，头像搬到 `.ch_name` 后仍在 `.mes` 之内，事件照常命中；只有「收起」档把头像 `display:none` 之后才点不到。
 
 **Q：会不会和其他沉浸类 / 美化脚本打架？**
-A：头像只搬一次（已被任何脚本搬走的头像会被跳过，还原时也只动本脚本标记过的节点），CSS 规则幂等；双方都在改 `--sheldWidth` 时，本脚本的看门狗会把注入样式保持在 `head` 末尾，因此通常最终生效的是本脚本。真出问题时用面板「注入」暂停即可一键隔离。
+A：头像只搬一次（已被任何脚本搬走的头像会被跳过，还原时也只动本脚本标记过的节点），CSS 规则幂等；双方都在改 `--sheldWidth` 时，本脚本的看门狗会把注入样式保持在 `head` 末尾（被整个删掉也会自动重建），因此通常最终生效的是本脚本。真出问题时用面板「注入」暂停即可一键隔离。
 
 **Q：停用脚本后会留下什么吗？**
 A：不会。停用或删除脚本触发 `pagehide` 钩子，按 `data-mt-antinarrow-moved` 标记把头像放回消息行，并移除注入的两段样式、面板与齿轮；观察器与定时器也一并清理，不会出现「停用后头像又被搬走」的复活现象。
@@ -177,6 +179,7 @@ A：不会。停用或删除脚本触发 `pagehide` 钩子，按 `data-mt-antina
 
 | 日期 | 版本 | 更新内容 |
 | :--- | :--- | :--- |
+| 2026-11-05 | v1.2.1 | 样式看门狗补上「注入样式被整个删除/挪出 head」的自动重建（原先只防被盖住）；「拉满全屏」收口 `#logprobsViewer` 与头像放大视图——放大视图仅在 >1000px 宽视口改回自然宽度并居中，不与酒馆移动端的全屏展开冲突；仓库新增 `scripts/sync-dist.py` 同步 src 与自包含 JSON |
 | 2026-11-05 | v1.2.0 | 断点输入框输到一半不再被夹取改写；面板新增「悬浮齿轮」关/左/右，不改代码即可开侧边齿轮；点面板外或按 Esc 关闭面板；流式输出时不再反复全量扫描楼层；从「仅窄屏」切回「全平台」时立即重新搬移头像；CDN 加载器改为跟随最新 v1.x 发布版（`@1`） |
 | 2026-10-02 | v1.1 | 修复「仅窄屏」下 DOM 搬移与 `@media` 不同步、热重载/双开互拆、停用后定时器复活等问题；新增样式看门狗与「注入」急救暂停开关；修复「拉满全屏」时左右导航抽屉与浮层塌缩成窄条、全屏抽屉关不掉 |
 | 2026-10-02 | v1.0 | 首个版本：清零消息行内边距 + 头像列搬进名字栏 + 设置面板；同日加入 CDN 加载器版脚本 |

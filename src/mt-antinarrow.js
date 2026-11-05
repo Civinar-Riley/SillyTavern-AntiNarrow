@@ -14,8 +14,8 @@
  * 需开启），或在面板里打开侧边悬浮齿轮；点面板以外区域或按 Esc 关闭。
  * 面板：注入急救开关 / 头像列三档 / 聊天列宽 / 生效范围 / 重roll条 / 左右留白 / 悬浮齿轮 /
  * 窄屏断点，改动即时生效并自动记忆（localStorage）。
- * 停用/删除脚本时自动还原全部 DOM 与样式，无残留；注入的样式由看门狗保持在文档末尾，
- * 不被晚加载的主题/其他脚本盖掉。
+ * 停用/删除脚本时自动还原全部 DOM 与样式，无残留；注入的样式由看门狗保持在文档末尾
+ * （被删除或挪出 head 则整体重建），不被晚加载的主题/其他脚本盖掉。
  */
 (() => {
   'use strict';
@@ -131,13 +131,24 @@
       r.push('#right-nav-panel{top:var(--topBarBlockSize,40px)!important;margin-top:0!important;left:auto!important;right:0!important'
         + ';width:100vw!important;max-width:100vw!important'
         + ';width:100dvw!important;max-width:100dvw!important}');
-      // 浮层保留原生 max-width:90dvw 的收边，只补宽度
-      r.push('#floatingPrompt,#cfgConfig{width:100vw!important;width:100dvw!important}');
+      // 浮层与 logprobs 面板（css/logprobs.css 自带同款「两侧空隙一半」塌缩公式）
+      // 保留原生 max-width:90dvw 的收边，只补宽度
+      r.push('#floatingPrompt,#cfgConfig,#logprobsViewer{width:100vw!important;width:100dvw!important}');
     }
+    // 头像放大视图挂着 .draggable 类，同款「两侧空隙一半」宽度公式在拉满后塌缩成
+    // min-width:100px 小块并钉在左缘（--leftGapWidth 归零）。只在宽视口修：
+    // ≤1000px 酒馆移动端自带 .draggable 全屏展开（style.css 移动块），不能覆盖它。
+    // 覆盖 --leftGapWidth 让原生 left 公式自行在整屏内居中，宽度回到 --maxWidth 自然值
+    const wideScreenFix = s.widenColumn
+      ? '@media screen and (min-width:1001px){'
+        + '.zoomed_avatar{--leftGapWidth:100vw!important;--leftGapWidth:100dvw!important'
+        + ';width:var(--maxWidth, 60vh)!important}}'
+      : '';
     const body = r.join('\n');
-    return s.narrowOnly
+    const layout = s.narrowOnly
       ? '@media screen and (max-width:' + s.breakpoint + 'px){\n' + body + '\n}'
       : body;
+    return wideScreenFix ? wideScreenFix + '\n' + layout : layout;
   }
 
   const UI_CSS = `
@@ -496,11 +507,12 @@
   }
 
   // ---------------------------- 看门狗 ----------------------------
-  // 主题/其他脚本在 head 里追加 <style> 或样式表 <link> 后，把我们的规则挪回末尾——
-  // 所有规则本就 !important，同优先级比的是顺序，看门狗保证晚注入者盖不掉我们
+  // head 有变动后自查布局规则是否仍「在 head 末尾」：被盖住（后面出现别的 <style>/样式表
+  // <link>）、被整个删除或挪出 head、UI 样式被删，都算失守——所有规则本就 !important，
+  // 同优先级比的是顺序，防抖后 injectStyles 挪回末尾或整体重建，晚动手者盖不掉我们
   function styleSuperseded() {
     const el = doc.getElementById(STYLE_ID);
-    if (!el || el.parentElement !== doc.head) return false;
+    if (!el || el.parentElement !== doc.head) return true;
     for (let s = el.nextElementSibling; s; s = s.nextElementSibling) {
       if (s.tagName === 'STYLE' || (s.tagName === 'LINK' && /stylesheet/i.test(s.rel || ''))) return true;
     }
@@ -510,12 +522,12 @@
   function setupWatchdog() {
     if (headObserver || !doc.head) return;
     headObserver = new MutationObserver(() => {
-      if (!styleSuperseded()) return;
+      if (!styleSuperseded() && doc.getElementById(UI_STYLE_ID)) return;
       clearTimeout(headTimer);
       headTimer = setTimeout(() => {
         headTimer = 0;
         if (settings.paused) return;
-        if (styleSuperseded()) doc.head.appendChild(doc.getElementById(STYLE_ID));
+        if (styleSuperseded() || !doc.getElementById(UI_STYLE_ID)) injectStyles();
       }, 200);
     });
     headObserver.observe(doc.head, { childList: true });
