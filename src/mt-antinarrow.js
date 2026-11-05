@@ -11,9 +11,9 @@
  *
  * 用法：酒馆助手 → 脚本库 → 全局脚本库 → 导入本 JSON（或新建脚本粘贴本文件）。
  * 打开设置面板：点酒馆助手脚本按钮「防窄化设置」（导入后自动存在；编辑页「按钮」开关
- * 需开启）。默认不再注入悬浮齿轮；想要侧边齿轮，把 DEFAULTS.showFloatingGear 改为 true。
- * 面板：注入急救开关 / 头像列三档 / 聊天列宽 / 生效范围 / 重roll条 / 左右留白 / 窄屏断点，
- * 改动即时生效并自动记忆（localStorage）。
+ * 需开启），或在面板里打开侧边悬浮齿轮；点面板以外区域或按 Esc 关闭。
+ * 面板：注入急救开关 / 头像列三档 / 聊天列宽 / 生效范围 / 重roll条 / 左右留白 / 悬浮齿轮 /
+ * 窄屏断点，改动即时生效并自动记忆（localStorage）。
  * 停用/删除脚本时自动还原全部 DOM 与样式，无残留；注入的样式由看门狗保持在文档末尾，
  * 不被晚加载的主题/其他脚本盖掉。
  */
@@ -29,8 +29,8 @@
     swipeStrip: true,    // true=末楼底部预留重roll条(‹ ›不压正文)；宿主带沉浸类布局(.immersive-mode)时自动让位
     breakpoint: 1000,    // narrowOnly=true 时的窄屏断点(px)，与酒馆移动端断点一致
     sidePad: 8,          // 楼层左右留白(px)：0=贴边 | 8=小 | 14=中 | 20=大
-    showFloatingGear: false, // false=用酒馆助手脚本按钮「防窄化设置」开面板 | true=额外显示侧边悬浮齿轮
-    buttonSide: 'right', // 悬浮齿轮位置：'right' | 'left'（仅 showFloatingGear=true 时有效）
+    showFloatingGear: false, // false=只用酒馆助手脚本按钮「防窄化设置」开面板 | true=额外显示侧边悬浮齿轮
+    buttonSide: 'right', // 悬浮齿轮位置：'right' | 'left'（面板「悬浮齿轮」关/左/右 同时管这两项）
   };
 
   const STORE_KEY = 'mtAntiNarrow.settings.v1';
@@ -192,6 +192,11 @@
   <button type="button" class="mtan-pill" data-value="14">中</button>
   <button type="button" class="mtan-pill" data-value="20">大</button>
 </div></div>
+<div class="mtan-row"><span class="mtan-lab">悬浮齿轮</span><div class="mtan-group" data-key="gear">
+  <button type="button" class="mtan-pill" data-value="off">关</button>
+  <button type="button" class="mtan-pill" data-value="left">左</button>
+  <button type="button" class="mtan-pill" data-value="right">右</button>
+</div></div>
 <div class="mtan-row"><span class="mtan-lab">窄屏断点(px)</span><input type="number" class="mtan-num" aria-label="窄屏断点" data-key="breakpoint" min="400" max="2000" step="50"></div>
 <button type="button" class="mtan-reset">恢复默认</button>
 `;
@@ -222,10 +227,9 @@
   // ------------------------ 头像列：搬家 / 还原 ------------------------
   function moveAvatars() {
     if (settings.paused || settings.avatarMode !== 'move' || !isNarrow() || !doc.body) return;
-    doc.querySelectorAll('#chat .mes').forEach((mes) => {
-      const av = mes.querySelector(':scope > .mesAvatarWrapper');
-      if (!av) return; // 已搬走（带本脚本标记或其他脚本搬进名字栏）→ 跳过，避免重复搬家
-      const chName = mes.querySelector('.ch_name');
+    // 只取仍是 .mes 直接子列的头像：已搬走的（本脚本或其他脚本搬进名字栏）自然不在其中，不会重复搬家
+    doc.querySelectorAll('#chat .mes > .mesAvatarWrapper').forEach((av) => {
+      const chName = av.parentElement.querySelector('.ch_name');
       if (!chName) return;
       av.setAttribute(MOVED_ATTR, '1');
       chName.insertBefore(av, chName.firstChild);
@@ -257,9 +261,8 @@
 
   function isNarrow() {
     if (!settings.narrowOnly) return true;
-    // 必须用宿主视口判断：脚本自己的 iframe 视口不是真实窗口
-    try { return host.matchMedia('(max-width:' + settings.breakpoint + 'px)').matches; }
-    catch (e) { return true; }
+    // mql 由 syncNarrowState 按宿主视口建立（脚本自己的 iframe 视口不是真实窗口），断点变更时随之重建
+    return mql ? mql.matches : true;
   }
 
   function onNarrowChange() { applyAvatarMode(); }
@@ -275,12 +278,14 @@
 
   function syncNarrowState() {
     detachMql();
-    if (!settings.narrowOnly) return; // 全平台：无需监听断点
-    try {
-      mql = host.matchMedia('(max-width:' + settings.breakpoint + 'px)');
-      if (mql.addEventListener) mql.addEventListener('change', onNarrowChange);
-      else if (mql.addListener) mql.addListener(onNarrowChange);
-    } catch (e) { mql = null; }
+    if (settings.narrowOnly) { // 全平台时无需监听断点
+      try {
+        mql = host.matchMedia('(max-width:' + settings.breakpoint + 'px)');
+        if (mql.addEventListener) mql.addEventListener('change', onNarrowChange);
+        else if (mql.addListener) mql.addListener(onNarrowChange);
+      } catch (e) { mql = null; }
+    }
+    // 两种情况都要按新状态重排：仅窄屏 → 全平台时，桌面端先前还原的头像也得重新搬
     onNarrowChange();
   }
 
@@ -309,10 +314,11 @@
         if (m.type !== 'childList' || !m.addedNodes.length) continue;
         for (const n of m.addedNodes) {
           if (n.nodeType !== 1) continue;
-          // 新楼、含楼层的容器，或第三方脚本插回的裸头像列，都要跟进搬家
+          // 只跟进新楼、含楼层的容器、被插回消息行的裸头像列；
+          // 流式输出反复改写 .mes_text 等楼内变动一律忽略，免得每 50ms 全量扫一遍聊天记录
           if (n.classList.contains('mes')
-            || (n.querySelector && n.querySelector('.mes'))
-            || (n.closest && n.closest('.mes'))) {
+            || (n.classList.contains('mesAvatarWrapper') && n.parentElement && n.parentElement.classList.contains('mes'))
+            || n.querySelector('.mes')) {
             scheduleMove();
             return;
           }
@@ -352,84 +358,125 @@
   // ---------------------------- 设置面板 ----------------------------
   let panel = null;
   let gear = null;
+  let numTimer = 0;      // 断点输入防抖
+  let outsideCloseAt = 0; // 最近一次「点面板外」关闭的时刻
+
+  function setPanelOpen(open) {
+    if (!panel) return;
+    panel.hidden = !open;
+    if (gear) {
+      gear.setAttribute('aria-expanded', String(open));
+      gear.classList.toggle('mtan-on', open);
+    }
+  }
 
   function togglePanel() {
     if (!panel) return;
-    panel.hidden = !panel.hidden;
-    if (gear) {
-      gear.setAttribute('aria-expanded', String(!panel.hidden));
-      gear.classList.toggle('mtan-on', !panel.hidden);
+    // 面板开着时点齿轮/脚本按钮：pointerdown 已按「点面板外」关掉，随后的 click 不能再把它打开
+    if (panel.hidden && Date.now() - outsideCloseAt < 500) return;
+    setPanelOpen(panel.hidden);
+  }
+
+  function onDocPointerDown(e) {
+    if (!panel || panel.hidden || panel.contains(e.target)) return;
+    outsideCloseAt = Date.now();
+    setPanelOpen(false);
+  }
+
+  function onDocKeyDown(e) {
+    if (e.key === 'Escape' && panel && !panel.hidden) setPanelOpen(false);
+  }
+
+  // 面板「悬浮齿轮」一行的取值：关 / 左 / 右 对应 showFloatingGear + buttonSide 两项设置
+  function gearValue() {
+    return settings.showFloatingGear ? settings.buttonSide : 'off';
+  }
+
+  function anchorTo(el, side) {
+    const calc = (unit) => 'calc((100' + unit + ' - var(--sheldWidth, 50vw)) / 2 + 8px)';
+    el.style[side] = calc('vw');
+    el.style[side] = calc('dvw'); // 不支持 dvw 时保留上一条 vw 值
+    el.style[side === 'left' ? 'right' : 'left'] = 'auto';
+  }
+
+  function syncGear() {
+    if (!settings.showFloatingGear) {
+      if (gear) { gear.remove(); gear = null; }
+      // 面板回到 UI_CSS 里的默认右锚点
+      if (panel) { panel.style.left = ''; panel.style.right = ''; }
+      return;
     }
+    if (!gear) {
+      gear = doc.createElement('button');
+      gear.id = BTN_ID;
+      gear.type = 'button';
+      gear.title = '防窄化 · 沉浸全宽 设置';
+      gear.dataset.mtanOwner = OWNER;
+      gear.setAttribute('aria-label', BUTTON_NAME);
+      gear.setAttribute('aria-expanded', String(!!panel && !panel.hidden));
+      gear.classList.toggle('mtan-on', !!panel && !panel.hidden);
+      gear.innerHTML = GEAR_SVG;
+      gear.addEventListener('click', togglePanel);
+      doc.body.appendChild(gear);
+    }
+    anchorTo(gear, settings.buttonSide);
+    if (panel) anchorTo(panel, settings.buttonSide);
   }
 
   function buildUI() {
     if (!doc.body) return; // 宿主 body 未就绪（极罕见）：跳过面板注入，避免抛错中断后续绑定
-    if (settings.showFloatingGear) {
-      gear = doc.getElementById(BTN_ID);
-      if (!gear) {
-        gear = doc.createElement('button');
-        gear.id = BTN_ID;
-        gear.type = 'button';
-        gear.title = '防窄化 · 沉浸全宽 设置';
-        gear.setAttribute('aria-label', BUTTON_NAME);
-        gear.setAttribute('aria-expanded', 'false');
-        gear.innerHTML = GEAR_SVG;
-        doc.body.appendChild(gear);
-      }
-      const anchorCalc = (unit) => 'calc((100' + unit + ' - var(--sheldWidth, 50vw)) / 2 + 8px)';
-      const side = settings.buttonSide === 'left' ? 'left' : 'right';
-      gear.style[side] = anchorCalc('vw');
-      gear.style[side] = anchorCalc('dvw'); // 不支持 dvw 时保留上一条 vw 值
-      gear.style[side === 'left' ? 'right' : 'left'] = 'auto';
-      gear.addEventListener('click', togglePanel);
-    }
-
-    panel = doc.getElementById(PANEL_ID);
-    if (!panel) {
-      panel = doc.createElement('div');
-      panel.id = PANEL_ID;
-      panel.hidden = true;
-      panel.innerHTML = PANEL_HTML;
-      doc.body.appendChild(panel);
-    }
-    if (settings.showFloatingGear) {
-      const anchorCalc = (unit) => 'calc((100' + unit + ' - var(--sheldWidth, 50vw)) / 2 + 8px)';
-      const side = settings.buttonSide === 'left' ? 'left' : 'right';
-      panel.style[side] = anchorCalc('vw');
-      panel.style[side] = anchorCalc('dvw');
-      panel.style[side === 'left' ? 'right' : 'left'] = 'auto';
-    }
+    panel = doc.createElement('div');
+    panel.id = PANEL_ID;
+    panel.dataset.mtanOwner = OWNER;
+    panel.hidden = true;
+    panel.innerHTML = PANEL_HTML;
+    doc.body.appendChild(panel);
+    syncGear();
 
     panel.querySelectorAll('.mtan-pill').forEach((pill) => {
       pill.addEventListener('click', () => {
-      const key = pill.closest('.mtan-group').dataset.key;
-      const raw = pill.dataset.value;
-      settings[key] = key === 'sidePad' ? Number(raw) : raw === 'true' ? true : raw === 'false' ? false : raw;
-      onSettingsChanged(key);
+        const key = pill.closest('.mtan-group').dataset.key;
+        const raw = pill.dataset.value;
+        if (key === 'gear') {
+          settings.showFloatingGear = raw !== 'off';
+          if (raw !== 'off') settings.buttonSide = raw;
+        } else {
+          settings[key] = key === 'sidePad' ? Number(raw) : raw === 'true' ? true : raw === 'false' ? false : raw;
+        }
+        onSettingsChanged(key);
       });
     });
     const num = panel.querySelector('.mtan-num');
-    let numTimer = 0;
     const commitBreakpoint = () => {
+      clearTimeout(numTimer); numTimer = 0;
       settings.breakpoint = clampBreakpoint(num.value);
       onSettingsChanged('breakpoint');
     };
-    // input（含步进按钮点击）防抖实时生效；change（失焦/回车）兜底
-    num.addEventListener('input', () => { clearTimeout(numTimer); numTimer = setTimeout(commitBreakpoint, 350); });
+    // input（含步进按钮点击）只在数值已合法时防抖实时生效，输入到一半（如想输 800 刚打出 8、或清空重输）
+    // 不提交，否则会被夹成 400 回写进框里；change（失焦/回车）兜底，非法值届时再夹取
+    num.addEventListener('input', () => {
+      clearTimeout(numTimer); numTimer = 0;
+      const v = Number(num.value);
+      if (num.value === '' || v < 400 || v > 2000) return;
+      numTimer = setTimeout(commitBreakpoint, 350);
+    });
     num.addEventListener('change', commitBreakpoint);
     panel.querySelector('.mtan-reset').addEventListener('click', () => {
       settings = Object.assign({}, DEFAULTS);
-      onSettingsChanged('avatarMode');
-      syncNarrowState(); // 顺带清掉旧断点监听（isNarrow 现在恒真，只是收尾干净）
+      onSettingsChanged('reset');
     });
 
+    doc.addEventListener('pointerdown', onDocPointerDown, true);
+    doc.addEventListener('keydown', onDocKeyDown);
     syncPanel();
   }
 
   function onSettingsChanged(key) {
+    const all = key === 'reset';
     saveSettings();
-    if (key === 'avatarMode' || key === 'paused') applyAvatarMode();
-    if (key === 'narrowOnly' || key === 'breakpoint') syncNarrowState();
+    if (all || key === 'narrowOnly' || key === 'breakpoint') syncNarrowState(); // 内含按新断点重排头像
+    else if (key === 'avatarMode' || key === 'paused') applyAvatarMode();
+    if (all || key === 'gear') syncGear();
     injectStyles(); // 断点/开关/暂停变化都通过重建规则生效
     syncPanel();
   }
@@ -438,9 +485,9 @@
     if (!panel) return;
     panel.querySelectorAll('.mtan-group').forEach((group) => {
       const key = group.dataset.key;
+      const cur = key === 'gear' ? gearValue() : String(settings[key]);
       group.querySelectorAll('.mtan-pill').forEach((pill) => {
-        const v = pill.dataset.value;
-        pill.classList.toggle('on', String(settings[key]) === v);
+        pill.classList.toggle('on', cur === pill.dataset.value);
       });
     });
     const num = panel.querySelector('.mtan-num');
@@ -509,6 +556,9 @@
     clearTimeout(headTimer); headTimer = 0;
     clearTimeout(chatChangedTimer); chatChangedTimer = 0;
     clearInterval(chatTimer); chatTimer = 0;
+    clearTimeout(numTimer); numTimer = 0;
+    doc.removeEventListener('pointerdown', onDocPointerDown, true);
+    doc.removeEventListener('keydown', onDocKeyDown);
     detachMql();
     restoreAvatars(); // 停用/删除脚本时按标记还原头像，无残留
     // 只拆归本实例所有的节点：热重载/双开时，迟到的旧实例 pagehide 不会拆掉新实例的东西

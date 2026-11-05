@@ -6,7 +6,7 @@
 
 [![Platform](https://img.shields.io/badge/platform-SillyTavern-6a4c93?style=flat-square)](https://github.com/SillyTavern/SillyTavern)
 [![Runtime](https://img.shields.io/badge/runtime-%E9%85%92%E9%A6%86%E5%8A%A9%E6%89%8B%E8%84%9A%E6%9C%AC-4a90d9?style=flat-square)](https://github.com/N0VI028/JS-Slash-Runner)
-[![Version](https://img.shields.io/badge/version-v1.1-2f81f7?style=flat-square)](https://github.com/Civinar-Riley/SillyTavern-AntiNarrow/tree/v1.1)
+[![Version](https://img.shields.io/badge/version-v1.2.0-2f81f7?style=flat-square)](https://github.com/Civinar-Riley/SillyTavern-AntiNarrow/tree/v1.2.0)
 [![License](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-lightgrey?style=flat-square)](#-声明与授权)
 ![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen?style=flat-square)
 [![Last commit](https://img.shields.io/github/last-commit/Civinar-Riley/SillyTavern-AntiNarrow?style=flat-square)](https://github.com/Civinar-Riley/SillyTavern-AntiNarrow/commits/main)
@@ -23,7 +23,7 @@
 
 - **问题出在宿主布局，不在你的页面**：酒馆消息行自带约 90~100px 的固定 insets——头像列 50px、`.mes` 左右内边距各 10px、`.mes_block` 左 10px、`.mes_text` 右缘预留位 30px。412px 手机视口下，真正留给内容的宽度只剩约 60%，任何做成整页效果的 HTML 都会被挤成中间一条窄带；
 - **不碰 iframe**：脚本跑在酒馆助手的隐藏 iframe 里，经 `window.parent.document` 向宿主文档注入一段 `!important` CSS 清零这些内边距，并把头像列 DOM 搬进名字栏。iframe 里的页面本来就按可用宽度的 100% 渲染，把宽度还给它即可；
-- **全部可配置**：七项设置收在脚本按钮「防窄化设置」面板里，从「只搬头像」到「整条聊天列拉满全屏」都能一键切，改动即时生效并自动记忆；
+- **全部可配置**：八项设置收在脚本按钮「防窄化设置」面板里，从「只搬头像」到「整条聊天列拉满全屏」都能一键切，改动即时生效并自动记忆；
 - **无痕启停**：停用或删除脚本会自动还原头像、移除注入样式与面板，不留残留；样式看门狗保证注入规则不被晚加载的主题或美化脚本盖掉；
 - **零依赖单文件**：`src/mt-antinarrow.js` 一个文件即全部逻辑，不使用任何第三方库。
 
@@ -48,7 +48,9 @@
 
 | 特性 | 说明 |
 | :--- | :--- |
-| 🎛️ 七项设置即时生效 | 注入 / 头像列 / 聊天列宽 / 生效范围 / 重roll条 / 左右留白 / 窄屏断点，点一下立刻重建注入规则 |
+| 🎛️ 八项设置即时生效 | 注入 / 头像列 / 聊天列宽 / 生效范围 / 重roll条 / 左右留白 / 悬浮齿轮 / 窄屏断点，点一下立刻重建注入规则；断点输入框只在数值合法时实时生效，输到一半不会被改写 |
+| ⚙️ 悬浮齿轮 | 「关 / 左 / 右」三档：在聊天列内缘额外放一个开面板的齿轮，脚本按钮被隐藏时也能打开面板 |
+| 🫥 随手关闭 | 点面板以外的任何位置或按 Esc 即收起，不必再找一次按钮 |
 | 💾 自动记忆 | 档位写入宿主 localStorage（key `mtAntiNarrow.settings.v1`），刷新、换角色、重启浏览器后仍在 |
 | 🚑 注入急救开关 | 「注入」切到「暂停」即清空全部注入并还原头像，用于一键隔离验证「是不是本脚本和其他美化冲突」 |
 | ♻️ 恢复默认 | 面板底部按钮，一键回到出厂档位 |
@@ -72,28 +74,27 @@
 
 | 文件 | 内容 | 优点 | 代价 |
 | :--- | :--- | :--- | :--- |
-| [`酒馆助手脚本-防窄化沉浸全宽.json`](./dist/酒馆助手脚本-防窄化沉浸全宽.json) | 代码完整内置（24,671 字符） | 离线可用，版本固定，不受 CDN 影响 | 仓库更新后需重新导入 |
-| [`酒馆助手脚本-防窄化沉浸全宽-CDN加载器.json`](./dist/酒馆助手脚本-防窄化沉浸全宽-CDN加载器.json) | 只有一行 `import` | 实时跟随仓库 `main` 分支，更新无需重新导入 | 断网或 jsDelivr 不可达时无效 |
+| [`酒馆助手脚本-防窄化沉浸全宽.json`](./dist/酒馆助手脚本-防窄化沉浸全宽.json) | 代码完整内置（26,405 字符） | 离线可用，版本固定，不受 CDN 影响 | 仓库更新后需重新导入 |
+| [`酒馆助手脚本-防窄化沉浸全宽-CDN加载器.json`](./dist/酒馆助手脚本-防窄化沉浸全宽-CDN加载器.json) | 只有一行 `import` | 自动跟随最新的 v1.x 发布版，更新无需重新导入 | 断网或 jsDelivr 不可达时无效 |
 
 CDN 加载器版的全部代码就这一行：
 
 ```js
-import 'https://cdn.jsdelivr.net/gh/Civinar-Riley/SillyTavern-AntiNarrow@main/src/mt-antinarrow.js';
+import 'https://cdn.jsdelivr.net/gh/Civinar-Riley/SillyTavern-AntiNarrow@1/src/mt-antinarrow.js';
 ```
 
-`@main` 换成 `@v1.1` 即可锁定版本（实测响应头：`@main` 为 `s-maxage=43200`（12 小时边缘缓存），`@v1.1` 为 `immutable` 一年）。
+`@1` 是 jsDelivr 的版本范围，解析到仓库里最新的 `v1.x.y` tag：只有打 tag 发布的版本才会推给用户，`main` 上未发布的提交不会。想锁死某一版，把 `@1` 换成具体 tag（如 `@v1.2.0`，`immutable` 一年缓存）；想追最新提交可换成 `@main`（`s-maxage=43200`，12 小时边缘缓存）。
 
 **配置一览**
 
 | 项 | 位置 | 说明 |
 | :--- | :--- | :--- |
-| 七项运行档位 | 脚本按钮「防窄化设置」面板 | 即时生效，存于 localStorage `mtAntiNarrow.settings.v1` |
+| 八项运行档位 | 脚本按钮「防窄化设置」面板 | 即时生效，存于 localStorage `mtAntiNarrow.settings.v1` |
 | 出厂默认值 | `src/mt-antinarrow.js` 顶部 `DEFAULTS` | 改完需重新生成/导入 JSON 才生效 |
-| 侧边悬浮齿轮 | `DEFAULTS.showFloatingGear` | 默认 `false`（用脚本按钮开面板）；改 `true` 后额外显示侧边齿轮，位置由 `buttonSide` 决定 |
 
 > ⚠️ **两个 JSON 只能启用一个**：同时导入会出现**两个同名「防窄化设置」按钮**，功能重复且难排查。
 > ⚠️ **CDN 加载器版依赖网络**：断网、jsDelivr 被墙或不可达时脚本不生效，此时请改用自包含版。
-> ⚠️ **面板按钮依赖编辑页的「按钮」开关**：开关关闭时按钮不显示，脚本本体仍在运行——想开面板也可以把 `DEFAULTS.showFloatingGear` 改成 `true`。
+> ⚠️ **面板按钮依赖编辑页的「按钮」开关**：开关关闭时按钮不显示，脚本本体仍在运行——可以先打开按钮，在面板里把「悬浮齿轮」切到「左」或「右」，之后即使关掉按钮也能用齿轮开面板。
 
 ## 🚀 使用指南
 
@@ -105,7 +106,7 @@ import 'https://cdn.jsdelivr.net/gh/Civinar-Riley/SillyTavern-AntiNarrow@main/sr
 | **手机上仍觉得贴边太紧** | 面板「左右留白」在 贴边 / 小 8px / 中 14px / 大 20px 之间切换，即时生效 |
 | **怀疑与其他美化脚本冲突** | 面板「注入」→「暂停」→ 页面恢复正常即与本脚本有关，排查完切回「开」；「暂停」会清空注入并还原头像 |
 | **末楼的重roll 按钮压住正文** | 面板「重roll条」→「开」（头像列选「保留」时原生空带仍在，无需补偿） |
-| **不想重新导入就跟随仓库更新** | 改用 `dist/酒馆助手脚本-防窄化沉浸全宽-CDN加载器.json`，它实时拉取 `main` 分支源码 |
+| **不想重新导入就跟随仓库更新** | 改用 `dist/酒馆助手脚本-防窄化沉浸全宽-CDN加载器.json`，它自动拉取最新的 v1.x 发布版 |
 | **临时停用 / 彻底删除** | 面板「注入」暂停可临时停；停用或删除脚本本体会自动还原头像、样式与面板，不会残留 |
 | **不装酒馆，先在浏览器里看效果** | 仓库根目录跑 `python -m http.server 8791`，打开 `http://127.0.0.1:8791/tests/_script_host.html`，窗口调到 412px 宽即为手机视口；详见 [tests/README.md](./tests/README.md) |
 
@@ -149,7 +150,7 @@ SillyTavern-AntiNarrow/
 ## ❓ 常见问题
 
 **Q：导入后面板按钮栏里没有「防窄化设置」？**
-A：先看脚本编辑页顶部的**「按钮」开关**是否开启——两个 JSON 都已预置该按钮，但开关关闭时酒馆助手不显示它。另一个办法是把源码 `DEFAULTS.showFloatingGear` 改成 `true`，用侧边悬浮齿轮开面板。
+A：先看脚本编辑页顶部的**「按钮」开关**是否开启——两个 JSON 都已预置该按钮，但开关关闭时酒馆助手不显示它。想彻底不依赖按钮栏，可在面板里打开「悬浮齿轮」，用聊天列内缘的齿轮开面板。
 
 **Q：怎么判断脚本真的生效了？**
 A：打开一个带正文卡或 iframe 的楼层，内容应铺满整条聊天列、两侧不留空白；点「防窄化设置」按钮能弹出面板，也说明脚本已在运行。不装酒馆时可用 `tests/_script_host.html` 复现，页面每 400ms 输出实时的计算样式。
@@ -158,7 +159,7 @@ A：打开一个带正文卡或 iframe 的楼层，内容应铺满整条聊天�
 A：功能完全相同，区别只在代码来源。想要稳定离线用自包含版；想跟着仓库更新走、不想每次重新导入就用 CDN 版。**两个都导入会出现两个同名按钮**，只启用一个即可。
 
 **Q：想锁定 CDN 版本怎么办？**
-A：把 URL 里的 `@main` 换成 `@v1.1`。注意：本仓库目前只有 `v1.1` 一个 tag，`@v1.0` 在 jsDelivr 上会返回 404——锁定版是 `immutable` 一年缓存，`@main` 则是 12 小时边缘缓存，因此刚推送的改动不一定立刻生效。
+A：把 URL 里的 `@1` 换成具体 tag，如 `@v1.2.0`（`immutable` 一年缓存）。`v1.1` 之前没有 tag，`@v1.0` 在 jsDelivr 上会返回 404；`@v1.1` 可用，但它不是完整 semver，不会被 `@1` 范围选中。`@1` 与 `@main` 都是最长 12 小时边缘缓存，刚发布的版本不一定立刻生效。
 
 **Q：设置存在哪？会同步到别的设备吗？**
 A：存在宿主页面的 localStorage，key 为 `mtAntiNarrow.settings.v1`，不联网、不上传、也不跨设备同步；换浏览器或清缓存后回到默认档位。
@@ -176,10 +177,11 @@ A：不会。停用或删除脚本触发 `pagehide` 钩子，按 `data-mt-antina
 
 | 日期 | 版本 | 更新内容 |
 | :--- | :--- | :--- |
+| 2026-11-05 | v1.2.0 | 断点输入框输到一半不再被夹取改写；面板新增「悬浮齿轮」关/左/右，不改代码即可开侧边齿轮；点面板外或按 Esc 关闭面板；流式输出时不再反复全量扫描楼层；从「仅窄屏」切回「全平台」时立即重新搬移头像；CDN 加载器改为跟随最新 v1.x 发布版（`@1`） |
 | 2026-10-02 | v1.1 | 修复「仅窄屏」下 DOM 搬移与 `@media` 不同步、热重载/双开互拆、停用后定时器复活等问题；新增样式看门狗与「注入」急救暂停开关；修复「拉满全屏」时左右导航抽屉与浮层塌缩成窄条、全屏抽屉关不掉 |
 | 2026-10-02 | v1.0 | 首个版本：清零消息行内边距 + 头像列搬进名字栏 + 设置面板；同日加入 CDN 加载器版脚本 |
 
-> 版本号来自仓库 git tag（`v1.1`）与提交信息（`v1.0`）。本仓库没有 `package.json`，源码内也不含版本常量，因此以 tag 为准。
+> 版本号来自仓库 git tag（`v1.2.0`、`v1.1`）与提交信息（`v1.0`）；自 `v1.2.0` 起 tag 采用完整 semver，供 CDN 加载器的 `@1` 范围解析。本仓库没有 `package.json`，源码内也不含版本常量，因此以 tag 为准。
 
 ## 📜 声明与授权
 
