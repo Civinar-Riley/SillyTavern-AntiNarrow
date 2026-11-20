@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>防窄化脚本实例</title>
+</head>
+<body>
+<script>
+  const listeners = new Map();
+  window.tavern_events = Object.freeze({ CHAT_CHANGED: 'chat_changed', MORE_MESSAGES_LOADED: 'more_messages_loaded' });
+  window.getButtonEvent = (name) => `button:${name}`;
+  window.eventOn = (name, handler) => {
+    if (!listeners.has(name)) listeners.set(name, new Set());
+    const handlers = listeners.get(name);
+    handlers.add(handler);
+    return { stop: () => { handlers.delete(handler); } };
+  };
+  window.fixtureEmit = (name, ...args) => {
+    for (const handler of [...(listeners.get(name) ?? [])]) handler(...args);
+  };
+  window.addEventListener('pagehide', () => listeners.clear(), { once: true });
+</script>
+<script src="../src/mt-antinarrow.js"></script>
+</body>
+</html>

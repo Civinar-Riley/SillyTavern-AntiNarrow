@@ -1,191 +1,347 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>防窄化消息头模拟页</title>
+<link rel="stylesheet" href="native-states.css">
 <style>
-  /* 按 SillyTavern public/style.css 默认值复刻消息模板（index.html #message_template） */
-  :root { --sheldWidth: 85vw; --mes-right-spacing: 30px; --avatar-base-height: 50px; --avatar-base-width: 50px;
-          --swipeCounterHeight: 15px; --swipeCounterMargin: 5px; }
-  body { margin: 0; background: #202126; font-family: sans-serif; color: #ddd; }
-  #sheld { position: relative; height: 620px; width: var(--sheldWidth); margin: 0 auto; display: flex; flex-direction: column; }
-  #chat { flex: 1; overflow-y: auto; display: flex; flex-direction: column; background: rgba(18,20,28,.92); }
-  .mes { display: flex; align-items: flex-start; padding: 10px 10px 0 10px; width: 100%; position: relative; }
-  .for_checkbox, .del_checkbox { display: none; }
+  :root { color-scheme: dark; }
   * { box-sizing: border-box; }
-  .mesAvatarWrapper { flex: none; }
-  .avatar { width: var(--avatar-base-width); height: var(--avatar-base-height); border-radius: 8px;
-            display: grid; place-items: center; background: #48536c; font-size: 24px; }
-  .avatar img { width: 100%; height: 100%; border-radius: inherit; }
-  .mesIDDisplay, .mes_timer, .tokenCounterDisplay { text-align: center; opacity: .7; font-size: 14px; font-weight: 600; }
-  .no-mesIDDisplay .mesIDDisplay, .no-timer .mes_timer, .no-tokenCount .tokenCounterDisplay { display: none; }
-  .flex-container { display: flex; flex-wrap: wrap; gap: 3px; }
-  .flex1 { flex: 1; }
-  .alignitemscenter { align-items: center; }
-  .alignItemsBaseline { align-items: baseline; }
-  .timestamp { font-size: 10px; opacity: .6; }
-  .mes_block { padding-left: 10px; width: 100%; min-width: 0; }
-  .ch_name { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-  .name_text { font-weight: 700; }
-  .mes_buttons { position: relative; display: flex; gap: 4px; opacity: .9; }
-  .last_mes .mesAvatarWrapper { padding-bottom: var(--avatar-base-height); }
-  .mes_edit_buttons { display: none; }
-  #test-controls { padding: 8px; display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px; }
-  #test-controls button { font: inherit; }
-  #test-controls label { display: flex; align-items: center; gap: 3px; }
-  .mes_text { padding-left: 0; padding-top: 5px; padding-bottom: 5px; padding-right: var(--mes-right-spacing); }
-  .mes_reasoning_details { margin-right: var(--mes-right-spacing); border: 1px solid #3a3d46; border-radius: 6px; padding: 4px 8px; font-size: 12px; opacity: .85; }
-  .mes_reasoning_details .mes_reasoning_summary { margin-right: calc(var(--mes-right-spacing) * -1); display: block; }
-  .mes_media_wrapper { padding-right: var(--mes-right-spacing); margin: 6px 0; }
-  .mes_media_wrapper img { width: 100%; height: 40px; object-fit: cover; display: block; border-radius: 6px; background: #262a33; }
-  .mes_text iframe { width: 100%; border: 0; display: block; background: #111318; height: 300px; }
-  .swipe_left, .swipe_right { position: absolute; bottom: calc(var(--swipeCounterHeight) + var(--swipeCounterMargin));
-      width: 25px; height: 25px; opacity: .3; z-index: 9999; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .swipe_left { left: 20px; }
-  .swipeRightBlock { position: absolute; right: 0; bottom: 0; pointer-events: none; display: flex; align-items: center; gap: 4px; }
-  .swipes-counter { opacity: .3; font-size: 12px; }
-  pre#out { margin: 6px 10px; font-size: 10px; white-space: pre-wrap; }
-  #test-pagehide { margin: 4px 10px 10px; padding: 4px 10px; }
+  body { margin: 0; background: #202126; color: #e3e6e7; font: 16px system-ui, sans-serif; }
+  #test-controls { padding: 8px 10px; border-bottom: 1px solid #39414a; font-size: 12px; }
+  .test-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+  .test-row + .test-row { margin-top: 6px; }
+  #test-controls label { display: inline-flex; align-items: center; gap: 3px; }
+  #test-controls input, #test-controls button, #test-controls select { font: inherit; accent-color: #90c5b6; }
+  #test-status { color: #aeb7bb; }
+  #test-metrics { margin: 8px 10px; font-size: 12px; }
+  #out { font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
 <div id="test-controls">
-  <button type="button" id="test-settings">防窄化设置</button>
-  <label><input type="checkbox" data-hide-class="no-mesIDDisplay" checked>楼层</label>
-  <label><input type="checkbox" data-hide-class="no-timer" checked>AI回复计时</label>
-  <label><input type="checkbox" data-hide-class="no-tokenCount" checked>token数</label>
-  <button type="button" id="test-update">更新计时与token</button>
-</div>
-<div id="sheld">
-  <div id="chat">
-    <div class="mes last_mes" mesid="1" is_user="false">
-      <div class="for_checkbox"></div>
-      <div class="del_checkbox"></div>
-      <div class="mesAvatarWrapper">
-        <div class="avatar" title="角色头像">桃</div>
-        <div class="mesIDDisplay">#128</div>
-        <div class="mes_timer" title="AI回复计时">28.4s</div>
-        <div class="tokenCounterDisplay">2048t</div>
-      </div>
-      <div class="swipe_left">‹</div>
-      <div class="mes_block">
-        <div class="ch_name flex-container justifySpaceBetween">
-          <div class="flex-container flex1 alignitemscenter">
-            <div class="flex-container alignItemsBaseline"><span class="name_text">苏小桃</span><small class="timestamp">11月20日 14:32</small></div>
-          </div>
-          <div class="mes_buttons"><span>✎</span><span>…</span></div>
-          <div class="mes_edit_buttons">✓ ✕</div>
-        </div>
-        <div class="mes_text">
-          <div class="mes_reasoning_details"><span class="mes_reasoning_summary">思考中…</span></div>
-          <iframe src="_stub_page.html"></iframe>
-          <div class="mes_media_wrapper"><img alt="media"></div>
-        </div>
-      </div>
-      <div class="swipeRightBlock"><span class="swipes-counter">1&NoBreak;/&NoBreak;1</span><span class="swipe_right">›</span></div>
-    </div>
-    <div class="mes" mesid="2" is_user="true">
-      <div class="for_checkbox"></div>
-      <div class="del_checkbox"></div>
-      <div class="mesAvatarWrapper">
-        <div class="avatar" title="用户头像">我</div>
-        <div class="mesIDDisplay">#129</div>
-        <div class="mes_timer"></div>
-        <div class="tokenCounterDisplay">32t</div>
-      </div>
-      <div class="swipe_left">‹</div>
-      <div class="mes_block">
-        <div class="ch_name flex-container justifySpaceBetween">
-          <div class="flex-container flex1 alignitemscenter">
-            <div class="flex-container alignItemsBaseline"><span class="name_text">用户</span><small class="timestamp">11月20日 14:33</small></div>
-          </div>
-          <div class="mes_buttons"><span>✎</span><span>…</span></div>
-          <div class="mes_edit_buttons">✓ ✕</div>
-        </div>
-        <div class="mes_text">普通文本楼层，带媒体行：<div class="mes_media_wrapper"><img alt="m"></div></div>
-      </div>
-      <div class="swipeRightBlock"><span class="swipes-counter">1&NoBreak;/&NoBreak;1</span><span class="swipe_right">›</span></div>
-    </div>
+  <div class="test-row" role="group" aria-label="酒馆原生设置">
+    <label>聊天样式
+      <select id="test-chat-mode">
+        <option value="default">默认</option>
+        <option value="documentstyle">文档</option>
+      </select>
+    </label>
+    <label><input type="checkbox" data-body-class="hideChatAvatars">隐藏头像</label>
+    <label><input type="checkbox" data-hide-class="no-mesIDDisplay" checked>楼层</label>
+    <label><input type="checkbox" data-hide-class="no-timer" checked>AI回复计时</label>
+    <label><input type="checkbox" data-hide-class="no-tokenCount" checked>token数</label>
+    <label>重roll
+      <select id="test-swipes">
+        <option value="both">双箭头与计数</option>
+        <option value="last">末次：右箭头与计数</option>
+        <option value="counter">仅计数</option>
+        <option value="arrows">仅箭头</option>
+        <option value="none">隐藏箭头与计数</option>
+      </select>
+    </label>
+    <label><input type="checkbox" data-body-class="swipeAllMessages">所有消息的重roll控件</label>
+  </div>
+  <div class="test-row" role="group" aria-label="消息场景">
+    <label><input type="checkbox" data-body-class="immersive-mode">沉浸布局</label>
+    <label><input type="checkbox" id="test-long-name">末楼长名字</label>
+    <label><input type="checkbox" data-body-class="expandMessageActions">展开操作</label>
+    <label><input type="checkbox" id="test-editing">编辑末楼</label>
+    <button type="button" id="test-add-message">添加新楼</button>
+    <button type="button" id="test-update">更新计时与token</button>
+  </div>
+  <div class="test-row" role="group" aria-label="脚本实例">
+    <button type="button" id="test-settings">防窄化设置</button>
+    <button type="button" id="test-restart">重启脚本</button>
+    <button type="button" id="test-overlap">双开脚本</button>
+    <button type="button" id="test-pagehide">停用最早实例</button>
+    <output id="test-status" aria-live="polite">正在启动</output>
   </div>
 </div>
-<pre id="out">booting…</pre>
-<button id="test-pagehide" type="button">模拟脚本停用(pagehide)</button>
+<div id="sheld"><div id="chat"></div></div>
+<details id="test-metrics">
+  <summary>状态与尺寸</summary>
+  <pre id="out"></pre>
+</details>
+<div id="test-script-frames" hidden></div>
+
+<template id="message_template">
+  <div class="mes" mesid="" is_user="false" is_system="false" bookmark_link="">
+    <div class="for_checkbox"></div><input type="checkbox" class="del_checkbox">
+    <div class="mesAvatarWrapper">
+      <div class="avatar"><img alt=""></div>
+      <div class="mesIDDisplay"></div>
+      <div class="mes_timer" title="AI回复计时"></div>
+      <div class="tokenCounterDisplay"></div>
+    </div>
+    <div class="swipe_left" aria-label="上一版本">‹</div>
+    <div class="mes_block">
+      <div class="ch_name flex-container justifySpaceBetween">
+        <div class="flex-container flex1 alignitemscenter">
+          <div class="flex-container alignItemsBaseline"><span class="name_text"></span><small class="timestamp"></small></div>
+        </div>
+        <div class="mes_buttons">
+          <span class="mes_button extraMesButtonsHint" title="消息操作">…</span>
+          <div class="extraMesButtons">
+            <span class="mes_button" title="翻译">译</span><span class="mes_button" title="生成图片">图</span>
+            <span class="mes_button" title="朗读">读</span><span class="mes_button" title="提示词">词</span>
+            <span class="mes_button" title="附件">附</span><span class="mes_button" title="书签">签</span>
+            <span class="mes_button" title="分支">支</span><span class="mes_button" title="复制">复</span>
+          </div>
+          <span class="mes_button mes_edit" title="编辑">✎</span>
+        </div>
+        <div class="mes_edit_buttons">
+          <button type="button" class="menu_button mes_edit_done" aria-label="确认" title="确认">✓</button>
+          <button type="button" class="menu_button mes_edit_copy" aria-label="复制" title="复制">⧉</button>
+          <button type="button" class="menu_button mes_edit_add_reasoning" aria-label="添加思考" title="添加思考">+</button>
+          <button type="button" class="menu_button mes_edit_delete" aria-label="删除" title="删除">−</button>
+          <button type="button" class="menu_button mes_edit_up" aria-label="上移" title="上移">↑</button>
+          <button type="button" class="menu_button mes_edit_down" aria-label="下移" title="下移">↓</button>
+          <button type="button" class="menu_button mes_edit_cancel" aria-label="取消" title="取消">×</button>
+        </div>
+      </div>
+      <div class="mes_text"></div>
+    </div>
+    <div class="flex-container swipeRightBlock">
+      <div class="swipe_right" aria-label="下一版本">›</div>
+      <div class="swipes-counter" hidden></div>
+    </div>
+  </div>
+</template>
+<template id="test-rich-content">
+  <details class="mes_reasoning_details"><summary class="mes_reasoning_summary">思考了 28.4 秒</summary><p>沿河的街灯已经亮了。</p></details>
+  <div class="mes_text"><iframe src="_stub_page.html" title="消息内嵌页"></iframe></div>
+  <div class="mes_media_wrapper"><img alt="消息媒体示例" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 40'%3E%3Cpath fill='%23284b51' d='M0 0h320v40H0z'/%3E%3Cpath fill='%23577870' d='M0 40V18l47 14 55-19 65 22 53-13 48 10 52-18v26z'/%3E%3C/svg%3E"></div>
+</template>
+
 <script>
-  // 模拟酒馆助手的脚本按钮入口，不预先触发待测功能。
-  const testEvents = new Map();
-  window.getButtonEvent = (name) => name;
-  window.eventOn = (name, handler) => testEvents.set(name, handler);
-  document.getElementById('test-settings').addEventListener('click', () => testEvents.get('防窄化设置')?.());
-  document.querySelectorAll('[data-hide-class]').forEach((input) => {
-    input.addEventListener('change', () => document.body.classList.toggle(input.dataset.hideClass, !input.checked));
+(() => {
+  const $id = (id) => document.getElementById(id);
+  const chat = $id('chat');
+  const body = document.body;
+  const messageTemplate = $id('message_template');
+  const instances = [];
+  let lastMessage;
+  let nextMessageId = 128;
+  let pagehides = 0;
+  let transitioning = false;
+
+  function setText(message, selector, value) {
+    message.querySelector(selector).textContent = value;
+  }
+
+  function appendMessage(name, text, { user = false, system = false, rich = false } = {}) {
+    const id = nextMessageId++;
+    const message = messageTemplate.content.firstElementChild.cloneNode(true);
+    message.setAttribute('mesid', id);
+    message.setAttribute('is_user', String(user));
+    message.setAttribute('is_system', String(system));
+    message.dataset.fixtureName = name;
+    message.classList.toggle('smallSysMes', system);
+    setText(message, '.name_text', name);
+    setText(message, '.timestamp', '11月20日 14:32');
+    setText(message, '.mesIDDisplay', `#${id}`);
+    setText(message, '.mes_timer', user || system ? '' : '28.4s');
+    setText(message, '.tokenCounterDisplay', user ? '32t' : system ? '' : '2048t');
+    const image = message.querySelector('.avatar img');
+    image.alt = `${name}的头像`;
+    image.src = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><path fill="${user ? '#57455c' : '#365a61'}" d="M0 0h50v50H0z"/><text x="25" y="33" fill="#f4f6f1" text-anchor="middle" font-size="23">${name[0]}</text></svg>`);
+    if (rich) message.querySelector('.mes_block').replaceChildren(message.querySelector('.ch_name'), $id('test-rich-content').content.cloneNode(true));
+    else message.querySelector('.mes_text').append(Object.assign(document.createElement('p'), { textContent: text }));
+    if (lastMessage) {
+      lastMessage.classList.remove('last_mes');
+      setText(lastMessage, '.name_text', lastMessage.dataset.fixtureName);
+      setEditing(lastMessage, false);
+    }
+    message.classList.add('last_mes');
+    chat.appendChild(message);
+    lastMessage = message;
+    updateName();
+    updateSwipes();
+    setEditing(message, $id('test-editing').checked);
+  }
+
+  function updateName() {
+    const name = lastMessage.dataset.fixtureName;
+    setText(lastMessage, '.name_text', $id('test-long-name').checked ? `${name}・WatchkeeperOfTheNorthernObservatoryAndItsMidnightArchives` : name);
+  }
+
+  function setEditing(message, editing) {
+    message.querySelector('.mes_buttons').style.display = editing ? 'none' : '';
+    message.querySelector('.mes_edit_buttons').style.display = editing ? 'flex' : '';
+    const text = message.querySelector('.mes_text');
+    const editor = text.querySelector('.edit_textarea');
+    if (editing && !editor) {
+      text.append(Object.assign(document.createElement('textarea'), {
+        className: 'edit_textarea',
+        ariaLabel: '编辑消息正文',
+        value: text.querySelector('p')?.textContent ?? '沿河的街灯已经亮了。',
+      }));
+    } else if (!editing) editor?.remove();
+  }
+
+  function updateSwipes() {
+    const mode = $id('test-swipes').value;
+    body.classList.toggle('hideAllSwipeButtons', mode === 'counter' || mode === 'none');
+    for (const message of chat.children) {
+      const swipeable = message.getAttribute('is_user') === 'false' && !message.classList.contains('smallSysMes');
+      const eligible = swipeable && (message === lastMessage || body.classList.contains('swipeAllMessages'));
+      message.classList.toggle('swipes_visible', eligible && (mode === 'both' || mode === 'arrows'));
+      message.classList.toggle('last_swipe', eligible && mode === 'last');
+      const counter = message.querySelector('.swipes-counter');
+      counter.hidden = !swipeable || mode === 'arrows' || mode === 'none';
+      counter.textContent = swipeable ? (mode === 'last' ? '3\u2060/\u20603' : '2\u2060/\u20603') : '';
+    }
+  }
+
+  function emit(name, ...args) {
+    for (const frame of instances) frame.contentWindow.fixtureEmit(name, ...args);
+  }
+
+  async function startInstance() {
+    const frame = document.createElement('iframe');
+    frame.title = '酒馆助手脚本实例';
+    frame.src = '_instance_host.html';
+    await new Promise((resolve) => {
+      frame.addEventListener('load', resolve, { once: true });
+      $id('test-script-frames').appendChild(frame);
+    });
+    frame.contentWindow.addEventListener('pagehide', () => { pagehides++; }, { once: true });
+    instances.push(frame);
+  }
+
+  async function stopOldestInstance() {
+    const frame = instances.shift();
+    if (!frame) return;
+    // Navigate first so the embedded window gets a browser-generated pagehide before removal.
+    await new Promise((resolve) => {
+      frame.addEventListener('load', resolve, { once: true });
+      frame.src = 'about:blank';
+    });
+    frame.remove();
+  }
+
+  function syncStatus() {
+    $id('test-status').value = transitioning ? '正在切换实例' : `${instances.length} 个实例 · pagehide ${pagehides} 次`;
+    $id('test-settings').disabled = transitioning || !instances.length;
+    $id('test-pagehide').disabled = transitioning || !instances.length;
+    $id('test-overlap').disabled = transitioning || instances.length !== 1;
+    $id('test-restart').disabled = transitioning;
+  }
+
+  async function transition(action) {
+    transitioning = true;
+    syncStatus();
+    try { await action(); }
+    finally { transitioning = false; syncStatus(); }
+  }
+
+  $id('test-settings').addEventListener('click', () => emit('button:防窄化设置'));
+  $id('test-pagehide').addEventListener('click', () => transition(stopOldestInstance));
+  $id('test-overlap').addEventListener('click', () => transition(startInstance));
+  $id('test-restart').addEventListener('click', () => transition(async () => {
+    while (instances.length) await stopOldestInstance();
+    await startInstance();
+  }));
+  $id('test-chat-mode').addEventListener('change', (event) => body.classList.toggle('documentstyle', event.target.value === 'documentstyle'));
+  document.querySelectorAll('[data-body-class], [data-hide-class]').forEach((input) => {
+    input.addEventListener('change', () => {
+      const { bodyClass, hideClass } = input.dataset;
+      body.classList.toggle(bodyClass || hideClass, bodyClass ? input.checked : !input.checked);
+      if (bodyClass === 'swipeAllMessages') updateSwipes();
+    });
   });
-  document.getElementById('test-update').addEventListener('click', () => {
-    const mes = document.querySelector('.mes.last_mes');
-    mes.querySelector('.mes_timer').textContent = '125.6s';
-    mes.querySelector('.tokenCounterDisplay').textContent = '16384t';
+  $id('test-swipes').addEventListener('change', updateSwipes);
+  $id('test-long-name').addEventListener('change', updateName);
+  $id('test-editing').addEventListener('change', (event) => setEditing(lastMessage, event.target.checked));
+  $id('test-add-message').addEventListener('click', () => {
+    appendMessage('苏小桃', '又过了一座桥，她停下来等我们。');
+    chat.scrollTop = chat.scrollHeight;
   });
-</script>
-<script src="../src/mt-antinarrow.js"></script>
-<script>
-  // ---------- 测试探针：每 400ms 渲染一次关键计算样式 ----------
+  $id('test-update').addEventListener('click', () => {
+    setText(lastMessage, '.mes_timer', '125.6s');
+    setText(lastMessage, '.tokenCounterDisplay', '16384t');
+  });
+
+  const numEvents = [];
+  document.addEventListener('change', (event) => {
+    if (event.target.matches('.mtan-num')) numEvents.push(`change:${event.target.value}`);
+  }, true);
+
   function metrics() {
-    const mesA = document.querySelector('#chat .mes.last_mes');
-    const rowAvatar = mesA.querySelector(':scope > .mesAvatarWrapper');
-    const barAvatar = mesA.querySelector('.ch_name > .mesAvatarWrapper');
-    const anyAvatar = mesA.querySelector('.mesAvatarWrapper');
-    const block = mesA.querySelector('.mes_block');
-    const ifr = mesA.querySelector('iframe');
-    const rd = mesA.querySelector('.mes_reasoning_details');
-    const sm = mesA.querySelector('.mes_reasoning_summary');
-    const mw = document.querySelector('.mes_media_wrapper');
-    const cs = (el) => el ? getComputedStyle(el) : null;
-    const aCs = cs(anyAvatar);
+    const mes = lastMessage;
+    const avatar = mes.querySelector('.mesAvatarWrapper');
+    const find = (selector) => mes.querySelector(selector);
+    const style = (el, prop) => el ? getComputedStyle(el)[prop] : null;
+    const width = (el) => el ? Math.round(el.getBoundingClientRect().width) : null;
+    const visible = (el) => !!el && el.getClientRects().length > 0 && style(el, 'visibility') !== 'hidden';
+    const sheld = $id('sheld');
+    const gear = $id('mt-antinarrow-gear');
+    const panel = $id('mt-antinarrow-panel');
+    const bp = panel?.querySelector('.mtan-num');
+    const layout = $id('mt-antinarrow-style');
+    const gearRect = gear?.getBoundingClientRect();
+    const gearHit = gearRect && document.elementFromPoint(gearRect.x + gearRect.width / 2, gearRect.y + gearRect.height / 2);
+    const selected = (key) => panel?.querySelector(`[data-key="${key}"] .on`)?.dataset.value ?? null;
     return {
-      avatarInRow: !!rowAvatar,
-      avatarInNameBar: !!barAvatar,
-      avatarDisplay: aCs ? aCs.display : null,
-      blockW: Math.round(block.getBoundingClientRect().width),
-      iframeW: ifr ? Math.round(ifr.getBoundingClientRect().width) : null,
-      reasoningMarginR: cs(rd) ? cs(rd).marginRight : null,
-      summaryMarginR: cs(sm) ? cs(sm).marginRight : null,
-      mediaPadR: cs(mw) ? cs(mw).paddingRight : null,
-      lastMesPadBottom: getComputedStyle(mesA).paddingBottom,
-      mesMarginL: getComputedStyle(mesA).marginLeft,
-      mesW: Math.round(mesA.getBoundingClientRect().width),
-      gearRight: (g => g ? getComputedStyle(g).right : null)(document.getElementById('mt-antinarrow-gear')),
-      gearBottom: (g => g ? getComputedStyle(g).bottom : null)(document.getElementById('mt-antinarrow-gear')),
-      gearHit: (() => {
-        const g = document.getElementById('mt-antinarrow-gear');
-        if (!g) return null;
-        const r = g.getBoundingClientRect();
-        const el = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-        return el ? (el.id || el.className.baseVal !== undefined ? (el.id || el.tagName) : el.tagName) : 'none';
-      })(),
-      sheldW: Math.round(document.getElementById('sheld').getBoundingClientRect().width),
-      gear: !!document.getElementById('mt-antinarrow-gear'),
-      panelHidden: (p => p ? p.hidden : 'missing')(document.getElementById('mt-antinarrow-panel')),
-      bpValue: (document.querySelector('.mtan-num') || {}).value,
-      bpDisabled: (document.querySelector('.mtan-num') || {}).disabled,
-      mediaHead: ((document.getElementById('mt-antinarrow-style') || { textContent: '' }).textContent.match(/@media[^{]*/) || ['no-media'])[0],
-      numEvents: window.__numEvents || [],
-      saved: localStorage.getItem('mtAntiNarrow.settings.v1')
+      instances: instances.length,
+      pagehides,
+      owner: layout?.dataset.mtanOwner ?? null,
+      messageCount: chat.children.length,
+      avatarInRow: avatar.parentElement === mes,
+      avatarInNameBar: avatar.parentElement.classList.contains('ch_name'),
+      avatarDisplay: style(avatar, 'display'),
+      avatarW: width(find('.avatar')),
+      metaVisible: ['.mesIDDisplay', '.mes_timer', '.tokenCounterDisplay'].map((selector) => visible(find(selector))),
+      blockW: width(find('.mes_block')),
+      blockMarginR: style(find('.mes_block'), 'marginRight'),
+      textMarginL: style(find('.mes_text'), 'marginLeft'),
+      iframeW: width(find('.mes_text iframe')),
+      reasoningMarginR: style(find('.mes_reasoning_details'), 'marginRight'),
+      summaryMarginR: style(find('.mes_reasoning_summary'), 'marginRight'),
+      mediaPadR: style(find('.mes_media_wrapper'), 'paddingRight'),
+      swipeControls: Array.from(chat.querySelectorAll('.mes:not(.smallSysMes)[is_user="false"]'), (message) => ({
+        id: message.getAttribute('mesid'),
+        left: visible(message.querySelector('.swipe_left')),
+        right: visible(message.querySelector('.swipe_right')),
+        counter: visible(message.querySelector('.swipes-counter')),
+        paddingBottom: style(message, 'paddingBottom'),
+      })),
+      lastMesPadBottom: style(mes, 'paddingBottom'),
+      mesMarginL: style(mes, 'marginLeft'),
+      mesW: width(mes),
+      chatOverflowX: chat.scrollWidth - chat.clientWidth,
+      viewportW: innerWidth,
+      sheldW: width(sheld),
+      sheldVar: getComputedStyle(sheld).getPropertyValue('--sheldWidth').trim(),
+      gear: !!gear,
+      gearLeft: style(gear, 'left'),
+      gearRight: style(gear, 'right'),
+      gearBottom: style(gear, 'bottom'),
+      gearHit: gear ? (gear.contains(gearHit) ? gear.id : gearHit?.id || gearHit?.tagName || 'none') : null,
+      panelHidden: panel?.hidden ?? 'missing',
+      headerDensity: selected('headerDensity'),
+      columnMode: selected('columnMode'),
+      readingWidth: selected('readingWidth'),
+      bpValue: bp?.value,
+      bpDisabled: bp?.disabled,
+      mediaHead: layout?.textContent.match(/@media[^{]*/)?.[0] ?? 'no-media',
+      numEvents: [...numEvents],
+      saved: localStorage.getItem('mtAntiNarrow.settings.v1'),
     };
   }
-  function render() {
-    try { document.getElementById('out').textContent = JSON.stringify(metrics(), null, 1); } catch (e) {}
-  }
+
+  appendMessage('苏小桃', '先在桥边等我。');
+  appendMessage('用户', '我沿着河边过来。', { user: true });
+  appendMessage('系统', '已载入聊天记录。', { system: true });
+  appendMessage('苏小桃', '', { rich: true });
+  Object.defineProperty(window, 'fixtureMetrics', { get: metrics });
+  const render = () => { $id('out').textContent = JSON.stringify(metrics(), null, 1); };
+  render();
   setInterval(render, 400);
-  window.__numEvents = [];
-  document.addEventListener('change', (e) => {
-    if (e.target && e.target.classList && e.target.classList.contains('mtan-num')) {
-      window.__numEvents.push('change:' + e.target.value);
-    }
-  }, true);
-  document.getElementById('test-pagehide').addEventListener('click', () => {
-    window.dispatchEvent(new Event('pagehide'));
-    setTimeout(render, 100);
-  });
+  transition(startInstance);
+})();
 </script>
 </body>
 </html>
