@@ -1,0 +1,152 @@
+/* SillyTavern: style.css, toggle-dependent.css, mobile-styles.css. */
+:root {
+  --sheldWidth: 50vw;
+  --mes-right-spacing: 30px;
+  --avatar-base-height: 50px;
+  --avatar-base-width: 50px;
+  --swipeCounterHeight: 15px;
+  --swipeCounterMargin: 5px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+#sheld {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: var(--sheldWidth);
+  height: clamp(320px, 72dvh, 620px);
+  margin: 0 auto;
+}
+
+#chat {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow: auto;
+  background: #181b23;
+}
+
+@media screen and (max-width: 1000px) {
+  #sheld { width: 100dvw !important; }
+  #chat { border: 1px solid #39414a; }
+}
+
+.mes {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  width: 100%;
+  padding: 10px 10px 0;
+}
+.for_checkbox, .del_checkbox { display: none; }
+.mesAvatarWrapper { flex: none; }
+.avatar { width: var(--avatar-base-width); height: var(--avatar-base-height); }
+.avatar img { display: block; width: 100%; height: 100%; border-radius: 8px; }
+.mesIDDisplay, .mes_timer, .tokenCounterDisplay {
+  text-align: center;
+  opacity: .7;
+  font-size: 14px;
+  font-weight: 600;
+}
+.last_mes .mesAvatarWrapper { padding-bottom: var(--avatar-base-height); }
+
+body.hideChatAvatars .mesAvatarWrapper .avatar,
+body.no-mesIDDisplay .mesIDDisplay,
+body.no-timer .mes_timer,
+body.no-tokenCount .tokenCounterDisplay { display: none !important; }
+body.hideChatAvatars .last_mes:not(.smallSysMes) { padding-bottom: 20px !important; }
+body.hideChatAvatars .swipe_left { left: 7px; }
+body.hideChatAvatars.no-timer.no-tokenCount.no-mesIDDisplay .swipe_left { left: 0; }
+
+.flex-container { display: flex; flex-wrap: wrap; gap: 3px; }
+.flex1 { flex: 1; }
+.alignitemscenter { align-items: center; }
+.alignItemsBaseline { align-items: baseline; }
+.justifySpaceBetween { justify-content: space-between; }
+.name_text { font-weight: 700; }
+.timestamp { opacity: .6; font-size: 10px; }
+.mes_block { width: 100%; min-width: 0; padding-left: 10px; }
+.ch_name { align-items: center; }
+
+.mes_buttons, .extraMesButtons { position: relative; display: flex; gap: 4px; padding: 1px; }
+.extraMesButtons, .mes_edit_buttons { display: none; }
+.mes_button { padding: 1px 3px; opacity: .65; }
+body.expandMessageActions .mes .mes_buttons .extraMesButtons { display: inherit !important; }
+body.expandMessageActions .mes .mes_buttons .extraMesButtonsHint { display: none !important; }
+.mes_edit_buttons { flex-wrap: nowrap; column-gap: 5px; padding-bottom: 5px; }
+.mes_edit_buttons .menu_button, .mes_button { flex: none; white-space: nowrap; }
+.mes_edit_buttons .menu_button { width: 24px; height: 24px; padding: 0; }
+.edit_textarea { display: block; width: 100%; min-height: 5em; resize: vertical; }
+.mes_text:has(> .edit_textarea) > :not(.edit_textarea) { display: none; }
+
+.mes_text { padding: 5px var(--mes-right-spacing) 5px 0; }
+.mes_text p { margin: 0; }
+.mes_reasoning_details { margin-right: var(--mes-right-spacing); border: 1px solid #39414a; border-radius: 6px; padding: 4px 8px; font-size: 12px; }
+.mes_reasoning_summary { margin-right: calc(var(--mes-right-spacing) * -1); cursor: pointer; }
+.mes_media_wrapper { padding-right: var(--mes-right-spacing); margin: 6px 0; }
+.mes_media_wrapper img { display: block; width: 100%; height: 40px; object-fit: cover; border-radius: 6px; }
+.mes_text iframe { display: block; width: 100%; height: 300px; border: 0; background: #111318; }
+
+body.documentstyle #chat .mes:not(.last_mes) { padding: 5px 10px 0; }
+body.documentstyle .last_mes { padding-top: 0; }
+body.documentstyle #chat .mes .mes_block { margin-right: 30px; }
+body.documentstyle #chat .mes .mes_text { margin-left: 20px; padding: 0; }
+body.documentstyle #chat .last_mes .mes_text { min-height: 70px; }
+body.documentstyle #chat .last_mes .swipe_left { left: 5px; }
+body.documentstyle #chat .mes .mesAvatarWrapper,
+body.documentstyle #chat .mes .ch_name :is(.name_text, .timestamp, .timestamp-icon),
+body.documentstyle .mes:not(.last_mes) .ch_name .mes_buttons { display: none !important; }
+/* The last message still has native message actions in Document Style. */
+body.documentstyle #chat .mes:not(.last_mes):not(:has(.edit_textarea)) .ch_name { display: none; }
+
+.mes.smallSysMes { padding: 5px !important; text-align: center; font-size: .9em; }
+.mes.smallSysMes .mes_block { margin-right: unset !important; }
+.mes.smallSysMes .mes_text { padding: 0 !important; text-align: center; }
+.mes.smallSysMes:not(:has(.edit_textarea)) .ch_name,
+.mes.smallSysMes .mesAvatarWrapper { display: none; }
+
+.swipe_left, .swipe_right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  opacity: .3;
+  font-size: 20px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.swipe_left { position: absolute; left: 20px; bottom: calc(var(--swipeCounterHeight) + var(--swipeCounterMargin)); }
+.swipeRightBlock {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  pointer-events: none;
+}
+.swipes-counter {
+  display: flex;
+  justify-content: center;
+  min-width: 40px;
+  height: var(--swipeCounterHeight);
+  margin-bottom: var(--swipeCounterMargin);
+  padding: 0 5px;
+  opacity: .3;
+  font-size: 12px;
+}
+.last_swipe :is(.swipes-counter, .swipe_right) { opacity: .7; }
+body.swipeAllMessages .mes:not(.last_mes) .swipes-counter { opacity: .3; }
+body:not(.swipeAllMessages) .mes:not(.last_mes) :is(.swipe_left, .swipe_right, .swipes-counter),
+.mes:not(.swipes_visible) .swipe_left,
+.mes:not(.swipes_visible, .last_swipe) .swipe_right,
+body.hideAllSwipeButtons :is(.swipe_left, .swipe_right),
+:is(.swipes-counter, .swipe_right, .swipe_left)[hidden] {
+  opacity: 0 !important;
+  visibility: hidden;
+  pointer-events: none;
+}
