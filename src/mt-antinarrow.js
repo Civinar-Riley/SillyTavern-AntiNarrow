@@ -6,8 +6,7 @@
  *
  * 原理：不碰任何 iframe——脚本向酒馆宿主文档注入一段 !important CSS，
  * 清零 .mes 左右 10px、.mes_block 左 10px、.mes_text 右 30px（以及思考块/媒体
- * 同源的 30px 右缩进），并把头像列搬进楼层数字栏（若其他脚本已把头像搬进
- * 名字栏，本脚本自动跳过，互不覆盖）。
+ * 同源的 30px 右缩进），并把头像列搬进名字栏（若其他脚本已搬过，本脚本自动跳过）。
  *
  * 用法：酒馆助手 → 脚本库 → 全局脚本库 → 导入本 JSON（或新建脚本粘贴本文件）。
  * 打开设置面板：点酒馆助手脚本按钮「防窄化设置」（导入后自动存在；编辑页「按钮」开关
@@ -105,8 +104,25 @@
       r.push('#chat .mes > .mesAvatarWrapper{display:none!important}');
     }
     if (s.avatarMode === 'move') {
-      // 头像进名字栏后，跟随它的末楼 50px 预留会把名字栏撑高，必须清掉
-      r.push('#chat .ch_name .mesAvatarWrapper{padding-bottom:0!important;flex:0 0 auto}');
+      // 原节点留在头像列内，数据更新/显隐仍由酒馆接管；用 contents 参与名字栏网格。
+      const bar = '#chat .mes:not(.smallSysMes) .ch_name:has(> .mesAvatarWrapper[' + MOVED_ATTR + '])';
+      const av = bar + ' > .mesAvatarWrapper[' + MOVED_ATTR + ']';
+      r.push(bar + '{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important'
+        + ';grid-template-rows:auto auto!important;column-gap:10px!important;row-gap:2px!important;align-items:center!important}');
+      r.push(av + '{display:contents!important}');
+      r.push(av + ' > .avatar{grid-column:1!important;grid-row:1 / span 2!important;align-self:center!important}');
+      r.push(bar + ' > :not(.mesAvatarWrapper):not(.mes_buttons):not(.mes_edit_buttons)'
+        + '{grid-column:2!important;grid-row:1!important;min-width:0!important}');
+      r.push(bar + ' > .mes_buttons,' + bar + ' > .mes_edit_buttons'
+        + '{grid-column:3!important;grid-row:1!important;align-self:start!important}');
+      r.push(av + ' > .mtan-message-meta{grid-column:2 / -1!important;grid-row:2!important'
+        + ';display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;min-width:0;line-height:1.35}');
+      // 不覆盖 display，尊重原生「AI回复计时 / 楼层 / token」开关；空数据不占位。
+      r.push(av + ' > .mtan-message-meta > :is(.mesIDDisplay,.mes_timer,.tokenCounterDisplay)'
+        + '{width:auto!important;min-width:0!important;margin:0!important;padding:0!important'
+        + ';font-size:calc(var(--mainFontSize,16px) * .75)!important;font-weight:400!important'
+        + ';text-align:left!important;white-space:nowrap!important;font-variant-numeric:tabular-nums}');
+      r.push(av + ' > .mtan-message-meta > :empty{display:none!important}');
     }
     if (s.swipeStrip && s.avatarMode !== 'keep') {
       // 重roll条：头像列离开消息行后，原生由 .last_mes .mesAvatarWrapper 的
@@ -242,6 +258,13 @@
     doc.querySelectorAll('#chat .mes > .mesAvatarWrapper').forEach((av) => {
       const chName = av.parentElement.querySelector('.ch_name');
       if (!chName) return;
+      const items = av.querySelectorAll(':scope > .mesIDDisplay, :scope > .mes_timer, :scope > .tokenCounterDisplay');
+      if (items.length) {
+        const meta = doc.createElement('div');
+        meta.className = 'mtan-message-meta';
+        av.insertBefore(meta, items[0]);
+        items.forEach((item) => meta.appendChild(item));
+      }
       av.setAttribute(MOVED_ATTR, '1');
       chName.insertBefore(av, chName.firstChild);
     });
@@ -250,6 +273,8 @@
   function restoreAvatars() {
     // 只处理带本脚本标记的节点，不影响其他脚本搬移的头像
     doc.querySelectorAll('#chat .mesAvatarWrapper[' + MOVED_ATTR + ']').forEach((av) => {
+      const meta = av.querySelector(':scope > .mtan-message-meta');
+      if (meta) meta.replaceWith(...meta.childNodes);
       const mes = av.closest('.mes');
       if (!mes) { av.removeAttribute(MOVED_ATTR); return; }
       if (av.parentElement !== mes) {
